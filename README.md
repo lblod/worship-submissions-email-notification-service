@@ -7,9 +7,9 @@
   <p align="center">
     This service is a Node.js application that periodically watches for new submissions and prepares emails for delivery through `deliver-email-service`. It retrieves information about submissions, constructs email messages, and places them in the appropriate outbox for further processing.
     <br />
-    <a href="https://github.com/lblod/worship-submissions-email-notification-service/issue/page">Report Bug</a>
+    <a href="https://github.com/lblod/worship-submissions-email-notification-service/issues/">Report Bug</a>
     ·
-    <a href="https://github.com/lblod/worship-submissions-email-notification-service/PR-page">Open PR</a>
+    <a href="https://github.com/lblod/worship-submissions-email-notification-service/pulls">Open PR</a>
   </p>
 </div>
 
@@ -32,8 +32,8 @@ The following services are closely related to this one:
 
 ## ⏩ Quick setup
 ### 🐋 Docker-compose.yml
-yml`:
-```
+
+```yml
 services:
   worship-submissions-email-notification:
     image: lblod/worship-submissions-email-notification-service:latest
@@ -192,7 +192,7 @@ If you have issues finding your service in the browser you can use the container
 docker ps | grep worship-submissions-email-notification-service | awk '{print $1}' | xargs -I{} docker inspect {} | grep -oP '(?<="IPAddress": ")[^"]+'
 ```
 
-You can also use [app-deliver-email](https://github.com/aatauil/app-deliver-email/) as a backend to test this service by simply adding it to the stack. [See Quick setup](#quick-setup)
+You can also use [app-deliver-email](https://github.com/aatauil/app-deliver-email/) as a backend to test this service by simply adding it to the stack. [See Quick setup](#-quick-setup)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
   
