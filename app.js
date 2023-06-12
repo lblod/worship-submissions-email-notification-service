@@ -38,7 +38,7 @@ app.get("/mock-insert-single", async (req, res) => {
   try {
     console.log("Testing /mock-insert-single, inserting dummy email ...");
     const email = singleSubmissionMockEmail();
-    await insertEmail("http://example.com", email, "foo");
+    await insertEmail(["http://example.com"], email, "foo");
     res.status(201).json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

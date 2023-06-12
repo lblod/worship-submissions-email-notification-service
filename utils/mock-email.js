@@ -30,9 +30,9 @@ export function multipleSubmissionsMockEmail() {
  */
 export function singleSubmissionMockEmail() {
   const now = new Date().toISOString();
-  const link = `${
+  const link = [`${
     process.env.WORSHIP_DECISIONS_APP_BASEURL
-  }search/submissions/${uuid()}`;
+  }search/submissions/${uuid()}`];
   let email = newEmail(
     "me@redpencil.io",
     "you@redpencil.io",
