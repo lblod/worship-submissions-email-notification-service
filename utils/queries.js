@@ -20,32 +20,32 @@ export async function getSubmissionInfo() {
     SELECT DISTINCT
       ?targetEenheid
       ?targetEenheidUuid
+      ?targetEenheidLabel
       ?creatorEenheidLabel
       ?decisionTypeLabel
       ?sentDate
       ?emailAddress
-      ?submissions
+      ?submission
     WHERE {
-      GRAPH <http://mu.semte.ch/graphs/public> {
         ?targetEenheid a besluit:Bestuurseenheid ;
           mu:uuid ?targetEenheidUuid ;
           ext:wilMailOntvangen "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> ;
-          ext:mailAdresVoorNotificaties ?emailAddress .
-      }
+          ext:mailAdresVoorNotificaties ?emailAddress ;
+          skos:prefLabel ?targetEenheidLabel .
       BIND(IRI(CONCAT(${sparqlEscapeString(
         ORG_GRAPH_BASE
       )}, ?targetEenheidUuid, ${sparqlEscapeString(
       ORG_GRAPH_SUFFIX
     )})) as ?graph)
       GRAPH ?graph {
-        ?submissions a meb:Submission ;
+        ?submission a meb:Submission ;
           pav:createdBy ?creatorEenheid ;
           nmo:sentDate ?sentDate ;
           prov:generated ?formData .
       }
       FILTER NOT EXISTS {
         GRAPH ${sparqlEscapeUri(SYSTEM_EMAIL_GRAPH)} {
-          ?email dct:relation ?submissions ;
+          ?email dct:relation ?submission ;
             dct:relation ?targetEenheid ;
             a nmo:Email .
         }
@@ -56,7 +56,7 @@ export async function getSubmissionInfo() {
       ?decisionType skos:prefLabel ?decisionTypeLabel .
     }
   `;
-    return parseResult(await query(queryInfo))[0];
+    return parseResult(await query(queryInfo));
   } catch (err) {
     console.log(err);
     throw new Error(err);
@@ -70,15 +70,10 @@ export async function getSubmissionInfo() {
  * @param {String} targetEenheid
  */
 export async function insertEmail(submissions, email, targetEenheid) {
-
   try {
-    const submissionRelations = Array.isArray(submissions)
-      ? `dct:relation ${submissions
-          .map(
-            (submissionUri) => sparqlEscapeUri(submissionUri)
-          )
-          .join(", ")}`
-      : `dct:relation ${sparqlEscapeUri(submissions)}`;
+    const submissionRelations = `dct:relation ${submissions
+      .map((submissionUri) => sparqlEscapeUri(submissionUri))
+      .join(", ")}`;
 
     const emailQuery = `
   ${PREFIXES}
@@ -93,18 +88,14 @@ export async function insertEmail(submissions, email, targetEenheid) {
       nmo:messageSubject ${sparqlEscapeString(email.subject)} ;
       nmo:emailTo ${sparqlEscapeString(email.to)} ;
       nmo:messageFrom ${sparqlEscapeString(process.env.FROM_EMAIL_ADDRESS)} ;
-      ${
-        email.bcc
-          ? `nmo:bcc ${sparqlEscapeString(email.bcc)} ;`
-          : "nmo:bcc NULL ;"
-      }
+      ${email.bcc ? `nmo:bcc ${sparqlEscapeString(email.bcc)} ;` : ""}
       dct:relation ${sparqlEscapeUri(targetEenheid)} ;
       ${submissionRelations} .
     }
   }`;
     await update(emailQuery);
   } catch (err) {
-    console.log('error', err);
+    console.log("error", err);
     throw new Error(err);
   }
 }
