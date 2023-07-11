@@ -38,7 +38,7 @@ services:
   worship-submissions-email-notification:
     image: lblod/worship-submissions-email-notification-service:latest
     environment:
-      RUN_INTERVAL: 5
+      RUN_INTERVAL: "0 10 * * *"
       OUTBOX_FOLDER_URI: "http://data.lblod.info/id/mail-folders/2"
       FROM_EMAIL_ADDRESS: "Agentschap Binnenlands Bestuur Vlaanderen <noreply-binnenland@vlaanderen.be>"
       WORSHIP_DECISIONS_APP_BASEURL: "https://databankerediensten.lokaalbestuur.vlaanderen.be/"
@@ -58,7 +58,7 @@ services:
 | MU_SPARQL_ENDPOINT        | The SPARQL endpoint URL for querying data                                                                        |         |         |
 | MU_SPARQL_UPDATEPOINT     | The SPARQL endpoint URL for performing SPARQL updates                                                            |         |         |
 | BCC_EMAIL_ADDRESSES       | Recipients of emails that should be in BCC (Blind Carbon Copy)                                                    |         |          |
-| RUN_INTERVAL              | How frequently the service should run to send email notifications (in minutes)                                   | 5       |          |
+| RUN_INTERVAL              | How frequently the service should run to send email notifications (every day at 10:00 minutes)                                   | 0 10 * * *       |          |
 | MAX_MESSAGE_AGE           | Maximum age of the messages requested from the API (in days)                                                     | 3       |          |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

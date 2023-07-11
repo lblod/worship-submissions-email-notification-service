@@ -9,14 +9,14 @@ import {
 import { insertEmail } from "./utils/queries";
 
 const INTERVAL = process.env.RUN_INTERVAL
-  ? parseInt(process.env.RUN_INTERVAL)
-  : 5;
+  ? process.env.RUN_INTERVAL
+  : `0 10 * * *`;
 
-const job = new CronJob(`*/${INTERVAL} * * * *`, processSendNotifications);
+const job = new CronJob(INTERVAL, processSendNotifications);
 
 job.start();
 console.log(
-  `Registered a task for fetching and processing subscription notifications every ${INTERVAL} minutes`
+  `Registered a task for fetching and processing subscription notifications at ${new Date().toISOString()}`
 );
 
 app.use(
