@@ -25,7 +25,7 @@ export async function getSubmissionInfo() {
       ?decisionTypeLabel
       ?sentDate
       ?emailAddress
-      ?submission
+      ?submissionUri
     WHERE {
         ?targetEenheid a besluit:Bestuurseenheid ;
           mu:uuid ?targetEenheidUuid ;
@@ -38,14 +38,14 @@ export async function getSubmissionInfo() {
       ORG_GRAPH_SUFFIX
     )})) as ?graph)
       GRAPH ?graph {
-        ?submission a meb:Submission ;
+        ?submissionUri a meb:Submission ;
           pav:createdBy ?creatorEenheid ;
           nmo:sentDate ?sentDate ;
           prov:generated ?formData .
       }
       FILTER NOT EXISTS {
         GRAPH ${sparqlEscapeUri(SYSTEM_EMAIL_GRAPH)} {
-          ?email dct:relation ?submission ;
+          ?email dct:relation ?submissionUri ;
             dct:relation ?targetEenheid ;
             a nmo:Email .
         }
@@ -72,7 +72,7 @@ export async function getSubmissionInfo() {
 export async function insertEmail(submissions, email, targetEenheid) {
   try {
     const submissionRelations = `dct:relation ${submissions
-      .map((submissionUri) => sparqlEscapeUri(submissionUri))
+      .map(({submissionUri}) => sparqlEscapeUri(submissionUri))
       .join(", ")}`;
 
     const emailQuery = `
