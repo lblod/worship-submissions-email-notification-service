@@ -1,3 +1,5 @@
+import { formatInTimeZone } from 'date-fns-tz';
+
 /**
  * convert results of select query to an array of objects.
  * courtesy: Niels Vandekeybus & Felix
@@ -22,4 +24,11 @@ export function parseResult( result ) {
       return obj;
     });
   };
-  
+
+export function formatDate(date) {
+    return formatInTimeZone(
+      date,
+      'Europe/Brussels',
+      'dd/MM/yyyy HH:mm'
+    );
+  }
