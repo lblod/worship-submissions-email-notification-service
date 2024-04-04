@@ -29,6 +29,6 @@ export function formatDate(date) {
     return formatInTimeZone(
       date,
       'Europe/Brussels',
-      'dd/MM/yyyy HH:mm'
+      'dd-MM-yyyy HH:mm'
     );
   }
