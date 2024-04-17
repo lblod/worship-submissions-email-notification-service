@@ -43,6 +43,7 @@ export async function getSubmissionInfo() {
           nmo:sentDate ?sentDate ;
           prov:generated ?formData .
       }
+      FILTER (?targetEenheid != ?creatorEenheid)
       FILTER NOT EXISTS {
         GRAPH ${sparqlEscapeUri(SYSTEM_EMAIL_GRAPH)} {
           ?email dct:relation ?submissionUri ;
