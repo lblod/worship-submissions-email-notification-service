@@ -155,36 +155,208 @@ SELECT ?mailfolders
 
 ### 🔬 Testing
 
-This app comes with mock routes `/mock-insert-single` and `/mock-insert-multiple`, so you can test if the dummy email is inserted in the database by checking the logs or querying it.
+This service works with the app-worship-decisions-database stack. Once subscribing to email notifications, submissions are processed by the service and emails are created with submission's information. You can retrieve emails by using either ID or URI. URI's are logged by the service when notifications are placed into outbox.
+
+#### Useful queries
+
+<details>
+  <summary>Find to be processed notifications</summary>
 
 ```sparql
+PREFIX meb:          <http://rdf.myexperiment.org/ontologies/base/>
+PREFIX xsd:          <http://www.w3.org/2001/XMLSchema#>
+PREFIX pav:          <http://purl.org/pav/>
+PREFIX dct:          <http://purl.org/dc/terms/>
+PREFIX besluit:      <http://data.vlaanderen.be/ns/besluit#>
+PREFIX muAccount:    <http://mu.semte.ch/vocabularies/account/>
+PREFIX org:          <http://www.w3.org/ns/org#>
+PREFIX prov:         <http://www.w3.org/ns/prov#>
+PREFIX mu:           <http://mu.semte.ch/vocabularies/core/>
+PREFIX ext:          <http://mu.semte.ch/vocabularies/ext/>
+PREFIX skos:         <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdf:          <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX nmo:     <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
+
+SELECT DISTINCT
+  ?targetEenheid
+  ?targetEenheidUuid
+  ?targetEenheidLabel
+  ?creatorEenheidLabel
+  ?decisionTypeLabel
+  ?sentDate
+  ?emailAddress
+  ?submissionUri
+WHERE {
+    ?targetEenheid a besluit:Bestuurseenheid ;
+      mu:uuid ?targetEenheidUuid ;
+      ext:wilMailOntvangen "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> ;
+      ext:mailAdresVoorNotificaties ?emailAddress ;
+      skos:prefLabel ?targetEenheidLabel .
+  BIND(IRI(CONCAT("http://mu.semte.ch/graphs/organizations/", ?targetEenheidUuid, "/LoketLB-databankEredienstenGebruiker")) as ?graph)
+  GRAPH ?graph {
+    ?submissionUri a meb:Submission ;
+      pav:createdBy ?creatorEenheid ;
+      nmo:sentDate ?sentDate ;
+      prov:generated ?formData .
+  }
+  FILTER (?targetEenheid != ?creatorEenheid)
+  FILTER NOT EXISTS {
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+      ?email dct:relation ?submissionUri ;
+        dct:relation ?targetEenheid ;
+        a nmo:Email .
+    }
+  }
+  ?creatorEenheid a besluit:Bestuurseenheid ;
+    skos:prefLabel ?creatorEenheidLabel .
+  ?formData dct:type ?decisionType .
+  ?decisionType skos:prefLabel ?decisionTypeLabel .
+}
+```
+</details>
+
+<details>
+  <summary>Create a dummy email</summary>
+
+```sparql
+PREFIX meb: <http://rdf.myexperiment.org/ontologies/base/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX pav: <http://purl.org/pav/>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX besluit: <http://data.vlaanderen.be/ns/besluit#>
+PREFIX muAccount: <http://mu.semte.ch/vocabularies/account/>
+PREFIX org: <http://www.w3.org/ns/org#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
-PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
-SELECT ?email WHERE {
+
+INSERT DATA {
   GRAPH <http://mu.semte.ch/graphs/system/email> {
-    ?email rdf:type nmo:Email ;
-          mu:uuid "<PROVIDE_UUID_HERE>" .
+
+  <http://data.lblod.info/id/emails/97e56660-bf70-11ee-aaaa-63b633ae4b8d>
+      rdf:type nmo:Email ;
+      mu:uuid """97e56660-bf70-11ee-aaaa-63b633ae4b8d""" ;
+      nmo:isPartOf <http://data.lblod.info/id/mail-folders/2> ;
+      nmo:htmlMessageContent """
+  <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
+   <html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"nl\">
+   <head>
+     <meta charset=\"UTF-8\" />
+     <meta http-equiv=\"Content-Type\" content=\"text/html charset=UTF-8\" />
+     <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrome=1\" />
+     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0 \" />
+     <meta name=\"format-detection\" content=\"telephone=no\" />
+     <!--[if !mso]><! -->
+     <link href=\"https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700\" rel=\"stylesheet\" />
+     <!--<![endif]-->
+   </head>
+
+   <body>
+     <p style=\"margin:0; font-family:sans-serif; letter-spacing:normal; line-height:1.6;\">Beste</p><br /><br />
+     <p style=\"margin:0; font-family:sans-serif; letter-spacing:normal; line-height:1.6;\">Uw bestuur &quot;
+     Aalst&quot; heeft nieuwe inzendingen ontvangen via het <a href=\"https://loket.lokaalbestuur.vlaanderen.be/login\" target=\"_blank\">Loket voor Lokale Besturen</a>, module Databank Erediensten.</p><br />
+     <table style=\"margin:0; font-family:sans-serif; letter-spacing:normal; line-height:1.6;border: .1rem solid #cfd5dd; border-collapse: collapse;\">
+     <caption aria-hidden=\"true\" style=\"visibility: hidden;\">Melding van inzending</caption>
+     <th style=\"padding: 1rem; border-top: .15rem solid #cfd5dd; border-left: .1rem solid #cfd5dd; border-bottom: .15rem solid #cfd5dd; border-right: .1rem dotted #cfd5dd\"\">Details voor inzending</th>
+     <th style=\"padding: 1rem; border-top: .15rem solid #cfd5dd; border-bottom: .15rem solid #cfd5dd; border-right: .1rem solid #cfd5dd\"></th>
+     <tr style=\"border-left: .1rem solid #cfd5dd; border-bottom: .1rem solid #cfd5dd; background-color: #f7f9fc;\">
+         <td style=\"padding: 1.2rem;\"><strong>Nieuwe inzending</strong> : <em style=\"color: #545961;\">Afschrift erkenningszoekende besturen</em> aangemaakt door <strong>Kerkfabriek O.-L.-Vrouw van Aalst</strong> op <time datetime=\"2024-03-12T16:00:57.957Z\">12-03-2024 17:00</time></td>
+         <td style=\"padding: 1.2rem; border-left: .1rem dotted #cfd5dd;\"><a href=\"https://databankerediensten.lokaalbestuur.vlaanderen.be/search/submissions/77702110-fc04-11ee-a803-4543710003ec\" target=\"_blank\">Bekijk</a></td>
+       </tr><tr style=\"border-left: .1rem solid #cfd5dd; border-bottom: .1rem solid #cfd5dd; background-color: #f7f9fc;\">
+         <td style=\"padding: 1.2rem;\"><strong>Nieuwe inzending</strong> : <em style=\"color: #545961;\">Opstart beroepsprocedure naar aanleiding van een beslissing</em> aangemaakt door <strong>Kerkfabriek H. Hart van Aalst</strong> op <time datetime=\"2024-01-10T09:00:00.398Z\">10-01-2024 10:00</time></td>
+         <td style=\"padding: 1.2rem; border-left: .1rem dotted #cfd5dd;\"><a href=\"https://databankerediensten.lokaalbestuur.vlaanderen.be/search/submissions/77702112-fc04-11ee-a803-4543710003ec\" target=\"_blank\">Bekijk</a></td>
+       </tr><tr style=\"border-left: .1rem solid #cfd5dd; border-bottom: .1rem solid #cfd5dd; background-color: #f7f9fc;\">
+         <td style=\"padding: 1.2rem;\"><strong>Nieuwe inzending</strong> : <em style=\"color: #545961;\">Jaarrekening</em> aangemaakt door <strong>Kerkfabriek St.-Martinus van Aalst</strong> op <time datetime=\"2023-04-01T11:00:23.803Z\">01-04-2023 13:00</time></td>
+         <td style=\"padding: 1.2rem; border-left: .1rem dotted #cfd5dd;\"><a href=\"https://databankerediensten.lokaalbestuur.vlaanderen.be/search/submissions/77702111-fc04-11ee-a803-4543710003ec\" target=\"_blank\">Bekijk</a></td>
+       </tr>
+     </table>
+     <br />
+     <br />
+     <p style=\"margin:0; font-family:sans-serif; letter-spacing:normal; line-height:1.6;\">De Vlaamse overheid zet verder in op digitalisering. Alle communicatie in kader van het eredienstendecreet en het erkenningsdecreet gebeurt voortaan digitaal via het Loket voor Lokale besturen. Meer info hierover vindt u op onze <a href=\"https://www.vlaanderen.be/lokaal-bestuur/digitale-communicatie-met-de-vlaamse-overheid\" target=\"_blank\">webpagina</a>.</p><br />
+     <p style=\"margin:0; font-family:sans-serif; letter-spacing:normal; line-height:1.6;\">Met Vriendelijke Groet</p>
+     <p style=\"margin:0; font-family:sans-serif; letter-spacing:normal; line-height:1.6;\">Agentschap Binnenlands Bestuur</p><br /><br />
+     <p style=\"color:gray; margin:0; line-height:1.6; font-family:sans-serif; letter-spacing:normal; font-size:14px;\">Opgelet, reageren op deze mail kan niet. Voor vragen over het Loket voor Lokale Besturen, mail naar <a href=\"mailto:loketlokaalbestuur@vlaanderen.be\" target=\"_blank\">loketlokaalbestuur@vlaanderen.be</a>. Voor inhoudelijke vragen kan u mailen naar het algemeen mailadres <a href=\"mailto:binnenland@vlaanderen.be\" target=\"_blank\">binnenland@vlaanderen.be</a>.</p>
+   </body>
+   </html>
+  """ ;
+     nmo:messageSubject """3 Nieuwe inzendingen""" ;
+     nmo:emailTo """you@redpencil.io""" ;
+     nmo:messageFrom """Agentschap Binnenlands Bestuur Vlaanderen <noreply-binnenland@vlaanderen.be>""" ;
+     nmo:bcc """blindcc@redpencil.io""" ;
+     dct:relation <http://data.lblod.info/id/besturenVanDeEredienst/3811902c41a855e68302318f48c4aac5>, <http://data.lblod.info/id/besturenVanDeEredienst/a1dc3ca01ba4904a0bc92527a4497bea>, <http://data.lblod.info/id/besturenVanDeEredienst/a51f65ab7b245dfa76e9698bd5e0f20c> ;
+     dct:relation <http://data.lblod.info/submissions/77702110-fc04-11ee-a803-4543710003ec>, <http://data.lblod.info/submissions/77702111-fc04-11ee-a803-4543710003ec>, <http://data.lblod.info/submissions/77702112-fc04-11ee-a803-4543710003ec> .
   }
 }
 ```
 
-Works the same for retrieving non-dummy emails.
+</details>
 
-As testing can be messy, you can delete mock emails by running this query, uuid should be replaced by the one you want to delete.
+<details>
+  <summary>Looking for a specific email</summary>
+
+```sparql
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
+SELECT ?email WHERE {
+  GRAPH <http://mu.semte.ch/graphs/system/email> {
+    BIND(<http://data.lblod.info/id/emails/PROVIDE_UUID_HERE> AS ?email) 
+    ?email rdf:type nmo:Email  .
+  }
+}
+```
+
+</details>
+
+<details>
+  <summary>Delete specific email</summary>
 
 ```sparql
 DELETE {
     GRAPH <http://mu.semte.ch/graphs/system/email> {
-      <http://data.lblod.info/id/emails/uuid> ?p ?o .
+      ?email ?p ?o .
     }
   }
-  WHERE {
+WHERE {
     GRAPH <http://mu.semte.ch/graphs/system/email> {
-      <http://data.lblod.info/id/emails/uuid> ?p ?o .
+      BIND(<http://data.lblod.info/id/emails/PROVIDE_UUID_HERE> AS ?email) 
+      ?email ?p ?o .
     }
   }
 ```
+
+</details>
+
+<details>
+  <summary>Re-send stuck email</summary>
+
+```sparql
+DELETE {
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+        ?emailNotificatie <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#isPartOf> ?failbox ;
+        <http://redpencil.data.gift/vocabularies/tasks/numberOfRetries> ?numberOfRetries .
+    }
+}
+INSERT {
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+        ?emailNotificatie <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#isPartOf> <http://data.lblod.info/id/mail-folders/2> ;
+        <http://redpencil.data.gift/vocabularies/tasks/numberOfRetries> 0 .
+    }
+} 
+WHERE {
+    BIND(<http://data.lblod.info/id/mail-folders/6> AS ?failbox)
+    BIND(<http://data.lblod.info/id/emails/PROVIDE_UUID_HERE> AS ?emailNotificatie) 
+
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+        ?emailNotificatie <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#isPartOf> ?failbox ;
+        <http://redpencil.data.gift/vocabularies/tasks/numberOfRetries> ?numberOfRetries .
+    }
+}
+```
+</details>
+
 
 If you have issues finding your service in the browser you can use the container IP address by doing :
 
@@ -193,17 +365,5 @@ docker ps | grep worship-submissions-email-notification-service | awk '{print $1
 ```
 
 You can also use [app-deliver-email](https://github.com/aatauil/app-deliver-email/) as a backend to test this service by simply adding it to the stack. [See Quick setup](#-quick-setup)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-  
-### API 
-
-**GET** `/mock-insert-single` Initiate a dummy email insert about one submission in outbox.
-
-**GET** `/mock-insert-multiple` Initiate a dummy email insert about multiple submissions in outbox.
-
-Returns **201 Created** if the email insert process was successful.
-
-Returns **500 Bad Request** if something unexpected went wrong while email inserting process.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
