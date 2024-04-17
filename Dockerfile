@@ -1,4 +1,4 @@
-FROM semtech/mu-javascript-template
+FROM semtech/mu-javascript-template:1.8.0
 LABEL maintainer="madnificent@gmail.com"
 
 ENV MU_APPLICATION_GRAPH "http://mu.semte.ch/graphs/public"
