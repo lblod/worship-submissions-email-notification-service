@@ -155,36 +155,129 @@ SELECT ?mailfolders
 
 ### 🔬 Testing
 
-This app comes with mock routes `/mock-insert-single` and `/mock-insert-multiple`, so you can test if the dummy email is inserted in the database by checking the logs or querying it.
+This service works with the app-worship-decisions-database stack. Once subscribing to email notifications, submissions are processed by the service and emails are created with submission's information. You can retrieve emails by using either ID or URI. URI's are logged by the service when notifications are placed into outbox.
+
+#### Useful queries
+
+<details>
+  <summary>Find to be processed notifications</summary>
+
+```sparql
+PREFIX meb:          <http://rdf.myexperiment.org/ontologies/base/>
+PREFIX xsd:          <http://www.w3.org/2001/XMLSchema#>
+PREFIX pav:          <http://purl.org/pav/>
+PREFIX dct:          <http://purl.org/dc/terms/>
+PREFIX besluit:      <http://data.vlaanderen.be/ns/besluit#>
+PREFIX muAccount:    <http://mu.semte.ch/vocabularies/account/>
+PREFIX org:          <http://www.w3.org/ns/org#>
+PREFIX prov:         <http://www.w3.org/ns/prov#>
+PREFIX mu:           <http://mu.semte.ch/vocabularies/core/>
+PREFIX ext:          <http://mu.semte.ch/vocabularies/ext/>
+PREFIX skos:         <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdf:          <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX nmo:     <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
+
+SELECT DISTINCT
+  ?targetEenheid
+  ?targetEenheidUuid
+  ?targetEenheidLabel
+  ?creatorEenheidLabel
+  ?decisionTypeLabel
+  ?sentDate
+  ?emailAddress
+  ?submissionUri
+WHERE {
+    ?targetEenheid a besluit:Bestuurseenheid ;
+      mu:uuid ?targetEenheidUuid ;
+      ext:wilMailOntvangen "true"^^<http://mu.semte.ch/vocabularies/typed-literals/boolean> ;
+      ext:mailAdresVoorNotificaties ?emailAddress ;
+      skos:prefLabel ?targetEenheidLabel .
+  BIND(IRI(CONCAT("http://mu.semte.ch/graphs/organizations/", ?targetEenheidUuid, "/LoketLB-databankEredienstenGebruiker")) as ?graph)
+  GRAPH ?graph {
+    ?submissionUri a meb:Submission ;
+      pav:createdBy ?creatorEenheid ;
+      nmo:sentDate ?sentDate ;
+      prov:generated ?formData .
+  }
+  FILTER (?targetEenheid != ?creatorEenheid)
+  FILTER NOT EXISTS {
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+      ?email dct:relation ?submissionUri ;
+        dct:relation ?targetEenheid ;
+        a nmo:Email .
+    }
+  }
+  ?creatorEenheid a besluit:Bestuurseenheid ;
+    skos:prefLabel ?creatorEenheidLabel .
+  ?formData dct:type ?decisionType .
+  ?decisionType skos:prefLabel ?decisionTypeLabel .
+}
+```
+</details>
+
+<details>
+  <summary>Looking for a specific email</summary>
 
 ```sparql
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX nmo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#>
-PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
 SELECT ?email WHERE {
   GRAPH <http://mu.semte.ch/graphs/system/email> {
-    ?email rdf:type nmo:Email ;
-          mu:uuid "<PROVIDE_UUID_HERE>" .
+    BIND(<http://data.lblod.info/id/emails/PROVIDE_UUID_HERE> AS ?email) 
+    ?email rdf:type nmo:Email  .
   }
 }
 ```
 
-Works the same for retrieving non-dummy emails.
+</details>
 
-As testing can be messy, you can delete mock emails by running this query, uuid should be replaced by the one you want to delete.
+<details>
+  <summary>Delete specific email</summary>
 
 ```sparql
 DELETE {
     GRAPH <http://mu.semte.ch/graphs/system/email> {
-      <http://data.lblod.info/id/emails/uuid> ?p ?o .
+      ?email ?p ?o .
     }
   }
-  WHERE {
+WHERE {
     GRAPH <http://mu.semte.ch/graphs/system/email> {
-      <http://data.lblod.info/id/emails/uuid> ?p ?o .
+      BIND(<http://data.lblod.info/id/emails/PROVIDE_UUID_HERE> AS ?email) 
+      ?email ?p ?o .
     }
   }
 ```
+
+</details>
+
+<details>
+  <summary>Re-send stuck email</summary>
+
+```sparql
+DELETE {
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+        ?emailNotificatie <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#isPartOf> ?failbox ;
+        <http://redpencil.data.gift/vocabularies/tasks/numberOfRetries> ?numberOfRetries .
+    }
+}
+INSERT {
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+        ?emailNotificatie <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#isPartOf> <http://data.lblod.info/id/mail-folders/2> ;
+        <http://redpencil.data.gift/vocabularies/tasks/numberOfRetries> 0 .
+    }
+} 
+WHERE {
+    BIND(<http://data.lblod.info/id/mail-folders/6> AS ?failbox)
+    BIND(<http://data.lblod.info/id/emails/PROVIDE_UUID_HERE> AS ?emailNotificatie) 
+
+    GRAPH <http://mu.semte.ch/graphs/system/email> {
+        ?emailNotificatie <http://www.semanticdesktop.org/ontologies/2007/03/22/nmo#isPartOf> ?failbox ;
+        <http://redpencil.data.gift/vocabularies/tasks/numberOfRetries> ?numberOfRetries .
+    }
+}
+```
+</details>
+
 
 If you have issues finding your service in the browser you can use the container IP address by doing :
 
@@ -193,17 +286,5 @@ docker ps | grep worship-submissions-email-notification-service | awk '{print $1
 ```
 
 You can also use [app-deliver-email](https://github.com/aatauil/app-deliver-email/) as a backend to test this service by simply adding it to the stack. [See Quick setup](#-quick-setup)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-  
-### API 
-
-**GET** `/mock-insert-single` Initiate a dummy email insert about one submission in outbox.
-
-**GET** `/mock-insert-multiple` Initiate a dummy email insert about multiple submissions in outbox.
-
-Returns **201 Created** if the email insert process was successful.
-
-Returns **500 Bad Request** if something unexpected went wrong while email inserting process.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

@@ -1,6 +1,6 @@
 {
   "name": "worship-submissions-email-notification-service",
-  "version": "1.1.0",
+  "version": "1.2.0-rc.4",
     "description": "Microservice that prepare email notification for submissions when subscribed",
   "repository": {
     "type": "git",
@@ -10,10 +10,12 @@
   "license": "MIT",
   "dependencies": {
     "@lblod/mu-auth-sudo": "^0.6.0",
-    "body-parser": "1.19.0",
-    "cron": "^2.2.0"
+    "body-parser": "1.20.2",
+    "cron": "^3.1.6",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.0"
   },
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
