@@ -86,6 +86,7 @@ export async function insertEmail(submissions, email, targetEenheid) {
       mu:uuid ${sparqlEscapeString(email.uri.split("/").pop())} ;
       nmo:isPartOf ${sparqlEscapeUri(OUTBOX_FOLDER_URI)} ;
       nmo:htmlMessageContent ${sparqlEscapeString(email.htmlContent)} ;
+      nmo:plainTextMessageContent ${sparqlEscapeString(email.plainTextMessageContent)} ;
       nmo:messageSubject ${sparqlEscapeString(email.subject)} ;
       nmo:emailTo ${sparqlEscapeString(email.to)} ;
       nmo:messageFrom ${sparqlEscapeString(process.env.FROM_EMAIL_ADDRESS)} ;
