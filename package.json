@@ -1,6 +1,6 @@
 {
   "name": "worship-submissions-email-notification-service",
-  "version": "1.2.0-rc.3",
+  "version": "1.2.0-rc.4",
     "description": "Microservice that prepare email notification for submissions when subscribed",
   "repository": {
     "type": "git",
