@@ -5,6 +5,7 @@ import {
   ORG_GRAPH_SUFFIX,
   SYSTEM_EMAIL_GRAPH,
   OUTBOX_FOLDER_URI,
+  ERROR_GRAPH
 } from "../config";
 import { parseResult } from "./utils";
 import { PREFIXES } from "./constants";
@@ -15,7 +16,7 @@ import { PREFIXES } from "./constants";
  */
 export async function getSubmissionInfo(bestuurseenheid, afterDateSent = null) {
   try {
-    const afterDateSentFilter = `FILTER(?sentDate > ${sparqlEscapeDatetime(afterDateSent)})`;
+    const afterDateSentFilter = `FILTER(?sentDate > ${sparqlEscapeDateTime(afterDateSent)})`;
 
     const queryInfo = `
     ${PREFIXES}
@@ -134,4 +135,28 @@ export async function getRelevantBestuurseenheden() {
   `;
   return parseResult(await query(queryString));
 
+}
+
+export async function createError(message){
+  const id = uuid();
+  const uri = `http://data.lblod.info/error/id/` + id;
+  const created = new Date();
+
+  const queryError = `
+   PREFIX dct: <http://purl.org/dc/terms/>
+   PREFIX oslc: <http://open-services.net/ns/core#>
+   PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+   INSERT DATA {
+    GRAPH ${sparqlEscapeUri(ERROR_GRAPH)}{
+      ${sparqlEscapeUri(uri)} a <http://open-services.net/ns/core#Error>;
+        mu:uuid ${id};
+        dct:subject ${sparqlEscapeString("Error creating email worship notification.")};
+        dct:created ${sparqlEscapeDateTime(created)};
+        oslc:message ${sparqlEscapeString(message)};
+        dct:creator <http://data.lblod.info/services/worship-submissions-email-notification-service>.
+    }
+   }
+  `;
+
+  await update(queryError);
 }
