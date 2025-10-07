@@ -1,5 +1,6 @@
 {
   "name": "worship-submissions-email-notification-service",
+  "type": "module",
   "version": "1.2.0",
     "description": "Microservice that prepare email notification for submissions when subscribed",
   "repository": {
