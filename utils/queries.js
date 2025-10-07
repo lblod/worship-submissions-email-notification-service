@@ -1,4 +1,4 @@
-import { sparqlEscapeUri, sparqlEscapeString, sparqlEscapeDatetime } from "mu";
+import { sparqlEscapeUri, sparqlEscapeString, sparqlEscapeDateTime, uuid } from "mu";
 import { querySudo as query, updateSudo as update } from "@lblod/mu-auth-sudo";
 import {
   ORG_GRAPH_BASE,
