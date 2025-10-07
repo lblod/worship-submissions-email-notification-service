@@ -1,4 +1,7 @@
 # Changelog
+## 1.3.0 (2024-10-07)
+- General improvements see https://github.com/lblod/worship-submissions-email-notification-service/pull/4 
+  - see also: [DL-6941]
 
 ## 1.2.0 (2024-04-18)
 
