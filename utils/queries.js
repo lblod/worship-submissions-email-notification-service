@@ -133,7 +133,7 @@ export async function getRelevantBestuurseenheden() {
        }
     }
   `;
-  return parseResult(await query(queryString));
+  return parseResult(await query(queryString)).map(r => r.eenheid);
 
 }
 
