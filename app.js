@@ -25,3 +25,9 @@ app.use(
 app.get("/", function (req, res) {
   res.send("Hello from worship-submissions-email-notification-service");
 });
+
+app.post('/debug/jobs', async function(req, res) {
+  console.log('Manual triggering of jobs');
+  processSendNotifications();
+  res.status(201).send();
+});
