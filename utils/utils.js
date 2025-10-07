@@ -8,7 +8,7 @@ import { formatInTimeZone } from 'date-fns-tz';
  */
 export function parseResult( result ) {
     if(!(result.results && result.results.bindings.length)) return [];
-  
+
     const bindingKeys = result.head.vars;
     return result.results.bindings.map((row) => {
       const obj = {};
@@ -31,4 +31,4 @@ export function formatDate(date) {
       'Europe/Brussels',
       'dd-MM-yyyy HH:mm'
     );
-  }
+}
