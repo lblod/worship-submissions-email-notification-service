@@ -149,7 +149,7 @@ export async function createError(message){
    INSERT DATA {
     GRAPH ${sparqlEscapeUri(ERROR_GRAPH)}{
       ${sparqlEscapeUri(uri)} a <http://open-services.net/ns/core#Error>;
-        mu:uuid ${id};
+        mu:uuid ${sparqlEscapeString(id)};
         dct:subject ${sparqlEscapeString("Error creating email worship notification.")};
         dct:created ${sparqlEscapeDateTime(created)};
         oslc:message ${sparqlEscapeString(message)};
